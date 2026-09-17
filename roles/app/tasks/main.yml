@@ -1,0 +1,62 @@
+---
+- name: Validate the site domain
+  ansible.builtin.assert:
+    that:
+      - site_domain is defined
+      - site_domain | length > 0
+      - site_domain is match('^[A-Za-z0-9.-]+$')
+    fail_msg: Define a valid site_domain for every inventory host.
+
+- name: Validate Vault variables
+  ansible.builtin.assert:
+    that:
+      - vault_mysql_database is defined
+      - vault_mysql_user is defined
+      - vault_mysql_password is defined
+      - vault_wp_title is defined
+      - vault_wp_admin_name is defined
+      - vault_wp_admin_password is defined
+      - vault_wp_admin_email is defined
+      - vault_wp_user_name is defined
+      - vault_wp_user_password is defined
+      - vault_wp_user_email is defined
+      - vault_wp_user_role is defined
+    fail_msg: Create group_vars/all/vault.yml from vault.yml.example.
+  no_log: true
+
+- name: Create application directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ app_root }}"
+      mode: "0755"
+    - path: "{{ app_root }}/requirements/nginx/conf"
+      mode: "0755"
+    - path: "/home/data/wordpress"
+      mode: "0755"
+    - path: "/home/data/database"
+      mode: "0755"
+
+- name: Copy the Inception application
+  ansible.builtin.copy:
+    src: srcs/
+    dest: "{{ app_root }}/"
+    mode: preserve
+  notify: Deploy application
+
+- name: Render the application environment
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ app_root }}/.env"
+    mode: "0600"
+  no_log: true
+  notify: Deploy application
+
+- name: Render the Nginx configuration
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ app_root }}/requirements/nginx/conf/nginx.conf"
+    mode: "0644"
+  notify: Deploy application

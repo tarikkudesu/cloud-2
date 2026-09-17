@@ -1,0 +1,32 @@
+---
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+    update_cache: true
+
+- name: Read UFW configuration
+  ansible.builtin.command: ufw status verbose
+  register: ufw_initial_status
+  changed_when: false
+
+- name: Deny incoming traffic by default
+  ansible.builtin.command: ufw default deny incoming
+  when: "'Default: deny (incoming)' not in ufw_initial_status.stdout"
+  changed_when: true
+
+- name: Allow outgoing traffic by default
+  ansible.builtin.command: ufw default allow outgoing
+  when: "'allow (outgoing)' not in ufw_initial_status.stdout"
+  changed_when: true
+
+- name: Allow public TCP ports
+  ansible.builtin.command: "ufw allow {{ item }}/tcp"
+  loop: "{{ firewall_allowed_tcp_ports }}"
+  register: ufw_rules
+  changed_when: "'Rule added' in ufw_rules.stdout"
+
+- name: Enable UFW
+  ansible.builtin.command: ufw --force enable
+  when: "'Status: active' not in ufw_initial_status.stdout"
+  changed_when: true

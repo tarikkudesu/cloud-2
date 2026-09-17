@@ -1,0 +1,6 @@
+---
+- name: Deploy application
+  ansible.builtin.command: "docker compose -f docker-compose.yml up --build --detach --remove-orphans"
+  args:
+    chdir: "{{ app_root }}"
+  changed_when: true

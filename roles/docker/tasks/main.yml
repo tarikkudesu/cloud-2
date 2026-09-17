@@ -1,0 +1,26 @@
+---
+- name: Get Docker script
+  ansible.builtin.get_url:
+    url: https://get.docker.com
+    dest: /tmp/install-docker.sh
+    mode: "0755"
+
+- name: Dry run Docker script
+  ansible.builtin.command: sh /tmp/install-docker.sh --dry-run
+  register: docker_dry_run
+  changed_when: false
+
+- name: Show dry run output
+  ansible.builtin.debug:
+    var: docker_dry_run.stdout_lines
+
+- name: Run Docker install script
+  ansible.builtin.command: sh /tmp/install-docker.sh
+  args:
+    creates: /usr/bin/docker
+
+- name: Ensure Docker is running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true

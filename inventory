@@ -1,0 +1,2 @@
+[servers]
+oracle ansible_host=0.0.0.0 ansible_port=22 ansible_user=ubuntu site_domain=0.0.0.0

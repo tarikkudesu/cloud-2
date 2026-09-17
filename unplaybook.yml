@@ -1,0 +1,91 @@
+---
+- name: Remove resources managed by this project
+  hosts: servers
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Check whether the application Compose file exists
+      ansible.builtin.stat:
+        path: /opt/inception/srcs/docker-compose.yml
+      register: inception_compose
+
+    - name: Remove the Inception containers, volumes, network, and images
+      ansible.builtin.command:
+        cmd: docker compose -f /opt/inception/srcs/docker-compose.yml down --volumes --rmi all --remove-orphans
+      when: inception_compose.stat.exists
+      changed_when: true
+
+    - name: Remove application files and data
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /opt/inception/srcs
+        - /home/data/wordpress
+        - /home/data/database
+        - /tmp/install-docker.sh
+
+    - name: Check whether Docker is installed
+      ansible.builtin.stat:
+        path: /usr/bin/docker
+      register: docker_installed
+
+    - name: Check whether UFW is installed
+      ansible.builtin.command: command -v ufw
+      register: ufw_installed
+      changed_when: false
+      failed_when: false
+
+    - name: Remove firewall rules managed by this project
+      ansible.builtin.command: "ufw delete allow {{ item }}/tcp"
+      loop:
+        - 22
+        - 80
+        - 443
+      when: ufw_installed.rc == 0
+      register: ufw_rule_removal
+      failed_when: >-
+        ufw_rule_removal.rc != 0 and
+        ('Skipping' not in ufw_rule_removal.stdout)
+      changed_when: "'Rule deleted' in ufw_rule_removal.stdout"
+
+    - name: Disable UFW
+      ansible.builtin.command: ufw --force disable
+      when: ufw_installed.rc == 0
+      register: ufw_disable
+      changed_when: "'Firewall stopped and disabled' in ufw_disable.stdout"
+
+    - name: Remove UFW
+      ansible.builtin.apt:
+        name: ufw
+        state: absent
+        purge: true
+        autoremove: false
+
+    - name: Stop and disable Docker
+      ansible.builtin.service:
+        name: docker
+        state: stopped
+        enabled: false
+      when: docker_installed.stat.exists
+
+    - name: Remove Docker packages installed by the project
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+          - docker-ce-rootless-extras
+          - docker-scan-plugin
+        state: absent
+        purge: true
+        autoremove: true
+
+    - name: Remove Docker data created by the project
+      ansible.builtin.file:
+        path: /var/lib/docker
+        state: absent
+      when: docker_installed.stat.exists

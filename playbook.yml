@@ -1,0 +1,9 @@
+---
+
+- name: My first Play
+  hosts: servers
+  become: true
+  roles:
+    - app
+    - docker
+    - firewall
