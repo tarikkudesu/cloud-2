@@ -1,2 +1,3 @@
 ---
 app_root: "/opt/inception"
+app_data_root: "/home/data"

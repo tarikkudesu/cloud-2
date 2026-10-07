@@ -12,7 +12,9 @@
 
     - name: Remove the Inception containers, volumes, network, and images
       ansible.builtin.command:
-        cmd: docker compose -f /opt/inception/srcs/docker-compose.yml down --volumes --rmi all --remove-orphans
+        cmd: >-
+          "docker compose -f /opt/inception/srcs/docker-compose.yml down
+          --volumes --rmi all --remove-orphans"
       when: inception_compose.stat.exists
       changed_when: true
 
@@ -21,7 +23,7 @@
         path: "{{ item }}"
         state: absent
       loop:
-        - /opt/inception/srcs
+        - /opt/inception/
         - /home/data/wordpress
         - /home/data/database
         - /tmp/install-docker.sh

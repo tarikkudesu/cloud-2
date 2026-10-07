@@ -1,9 +1,9 @@
 ---
 
-- name: My first Play
+- name: Setting Up Inception
   hosts: servers
   become: true
   roles:
-    - app
     - docker
     - firewall
+    - app
