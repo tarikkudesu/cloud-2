@@ -1,5 +1,4 @@
-INPUT_VAULT			?=	secrets/vault
-PASSWORD_FILE		?=	secrets/password
+PASSWORD_FILE		?=	password
 VAULT_FILE 			=	group_vars/all/vault.yml
 VAULT_IDENTITY 		=	--vault-id "default@$(PASSWORD_FILE)"
 
@@ -32,11 +31,8 @@ check: lint syntax
 dry-run:
 	@ansible-playbook $(VAULT_IDENTITY) --check --diff playbook.yml
 
-vault: $(VAULT_FILE)
-	@ansible-vault edit $(VAULT_IDENTITY) $(VAULT_FILE)
-
-$(VAULT_FILE): $(INPUT_VAULT)
-	@ansible-vault encrypt $(VAULT_IDENTITY) --encrypt-vault-id default --output $(VAULT_FILE) $(INPUT_VAULT)
+vault:
+	@ansible-vault encrypt $(VAULT_IDENTITY) $(VAULT_FILE)
 
 status:
 	@ansible appservers --become $(VAULT_IDENTITY) -a "docker compose -f /opt/inception/docker-compose.yml ps"
