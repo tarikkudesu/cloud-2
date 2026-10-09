@@ -1,7 +1,7 @@
-VAULT_IDENTITY 		=	--vault-id "default@$(PASSWORD_FILE)"
-VAULT_FILE 			=	group_vars/all/vault.yml
-PASSWORD_FILE		?=	secrets/password
 INPUT_VAULT			?=	secrets/vault
+PASSWORD_FILE		?=	secrets/password
+VAULT_FILE 			=	group_vars/all/vault.yml
+VAULT_IDENTITY 		=	--vault-id "default@$(PASSWORD_FILE)"
 
 
 all: deploy
